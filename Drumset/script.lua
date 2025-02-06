@@ -1,7 +1,7 @@
 require("utils")
 require("tables")
-local pianos = {}
-local debug = true
+local drums = {}
+local debug = false
 local playerRaycastRange = 3
 
 models.Drum.SKULL.DrumSet:setPrimaryRenderType("TRANSLUCENT_CULL")
@@ -25,7 +25,7 @@ function events.skull_render(delta, block, item, entity, mode)
 
     -- creates piano table element when a piano is first placed down
     local pos = block:getPos()
-    local pianoID = tostring(pos)
+    local drumID = tostring(pos)
 
     -- changes the piano texture if there's a gold 2 blocks under the player head
     if world.getBlockState(pos.x, pos.y - 2, pos.z):getID() == "minecraft:gold_block" then
@@ -35,57 +35,46 @@ function events.skull_render(delta, block, item, entity, mode)
     end
 
     -- creats new piano entry if head was just placed
-    if pianos[pianoID] == nil then
-        pianos[pianoID] = { pos = pos, playingKeys = {} }
+    if drums[drumID] == nil then
+        drums[drumID] = { pos = pos, playingKeys = {} }
     end
 
     -- checks table for checked keys, and presses the key if the key press was less than 3 ticks ago
-    for keyID, keyPresstime in pairs(pianos[pianoID].playingKeys) do
+    for keyID, keyPresstime in pairs(drums[drumID].playingKeys) do
         if world.getTime() < keyPresstime + 3 then
             --models.Drum.SKULL.DrumSet   .Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(-4, 0, 0)
         else
             -- clears the keypress data for keys that were pressed more than 3 ticks ago
-            pianos[pianoID].playingKeys[keyID] = nil
+            drums[drumID].playingKeys[keyID] = nil
         end
     end
-end
-
--- function used to check for the missing black notes. (they're annoying)
-function checkForEmptyKeys(keyXPos)
-    local returnVal = false
-    for i, v in pairs(emptyKeys) do
-        if keyXPos == v then
-            returnVal = true
-        end
-    end
-    return returnVal
 end
 
 -- plays note ^^
 function playNote(pianoID, keyID, doesPlaySound, notePos)
-    if pianos[pianoID].playingKeys[keyID] == nil then
-        pianos[pianoID].playingKeys[keyID] = {}
+    if drums[pianoID].playingKeys[keyID] == nil then
+        drums[pianoID].playingKeys[keyID] = {}
     end
-    pianos[pianoID].playingKeys[keyID] = world.getTime()
+    drums[pianoID].playingKeys[keyID] = world.getTime()
     if not doesPlaySound then return end
     if notePos then
         sounds:playSound(keyPitches[keyID][2], notePos, 2, keyPitches[keyID][1])
     else
-        sounds:playSound('sounds.'..keyID, pianos[pianoID].pos, 2)
+        sounds:playSound('sounds.'..keyID, drums[pianoID].pos, 2)
     end
 end
 
 -- stores important functions so that other avatars can access them through avatarVars() in the world API
 avatar:store("playNote", playNote)
-avatar:store("validPos", function(pianoID) return pianos[pianoID] ~= nil end)
+avatar:store("validPos", function(pianoID) return drums[pianoID] ~= nil end)
 avatar:store("getPlayingKeys",
-    function(pianoID) return pianos[pianoID] ~= nil and pianos[pianoID].playingKeys or nil end)
+    function(drumID) return drums[drumID] ~= nil and drums[drumID].playingKeys or nil end)
 
 -- the tick function >~>
 function events.world_tick()
-    for i, v in pairs(pianos) do
+    for i, v in pairs(drums) do
         if world.getBlockState(v.pos).id ~= "minecraft:player_head" then
-            pianos[i] = nil
+            drums[i] = nil
         end
     end
 
@@ -96,22 +85,22 @@ function events.world_tick()
             local pos = player:getPos()
 
             -- run this code for every piano
-            for pianoID, pianoData in pairs(pianos) do
+            for drumID, drumData in pairs(drums) do
                 repeat
-                    local pianoPos = pianoData.pos
+                    local pianoPos = drumData.pos
 
                     -- escapes if the piano has been placed on a wall
                     if world.getBlockState(pianoPos).properties == nil then break end
 
                     ------ calculates raycast abd returns intersection with main bounding boxes for black and white notes ------
-                    local pianoRot = vec(0,
+                    local drumRot = vec(0,
                         -world.getBlockState(pianoPos).properties.rotation * 22.5 + 180, 0)
                     local pivot = vec(0.5, 0, 0.5)
                     local worldOffset = pianoPos + pivot
 
-                    local eyePos = rotateAroundPivot(-pianoRot,
+                    local eyePos = rotateAroundPivot(-drumRot,
                         vec(pos.x, pos.y + player:getEyeHeight(), pos.z) - worldOffset, vec(0, 0, 0))
-                    local lookDir = rotateAroundPivot(-pianoRot, player:getLookDir(), vec(0, 0, 0))
+                    local lookDir = rotateAroundPivot(-drumRot, player:getLookDir(), vec(0, 0, 0))
 
                     local ray = { origin = eyePos, dir = lookDir }
                     rayIntersections = {}
@@ -125,7 +114,7 @@ function events.world_tick()
                             -- spawn box corner particles
                             for cornerID, corner in pairs(computeCorners(box)) do
                                 particles:newParticle("minecraft:dust 0 0.7 0.7 0.2",
-                                    worldOffset + rotateAroundPivot(pianoRot, corner, vec(0, 0, 0)))
+                                    worldOffset + rotateAroundPivot(drumRot, corner, vec(0, 0, 0)))
                             end
                         end
                         ---------------
@@ -142,18 +131,41 @@ function events.world_tick()
                     if rayIntersections.snareDrum then
                         keyID = 'D2'
                     end
+                    if rayIntersections.floorTom then
+                        keyID = 'F2'
+                    end
+                    if rayIntersections.lowTom then
+                        keyID = 'A2'
+                    end
+                    if rayIntersections.highTom then
+                        keyID = 'B2'
+                    end
+                    if rayIntersections.rideCymbal then
+                        keyID = 'D#3'
+                    end
+                    if rayIntersections.crashCymbal then
+                        keyID = 'C#3'
+                    end
+                    if rayIntersections.hiHats then
+                        if player:isCrouching() then
+                            keyID = 'F#2'
+                        else
+                            keyID = 'A#2'
+                        end
+                        
+                    end
                    
                     if keyID == nil then break end
-                    playNote(pianoID, keyID, pianos[pianoID].playingKeys[keyID] == nil)
+                    playNote(drumID, keyID, drums[drumID].playingKeys[keyID] == nil)
                 until true
             end
         until true
     end
 
     -- clears any piano table elements if there's not a head there anymore
-    for k, v in pairs(pianos) do
+    for k, v in pairs(drums) do
         if world.getBlockState(v.pos).id ~= "minecraft:player_head" then
-            pianos[k] = nil
+            drums[k] = nil
         end
     end
 end
