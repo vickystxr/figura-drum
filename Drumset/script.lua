@@ -1,24 +1,24 @@
 require("utils")
 require("tables")
 local pianos = {}
-local debug = false
+local debug = true
 local playerRaycastRange = 3
 
 models.Drum.SKULL.DrumSet:setPrimaryRenderType("TRANSLUCENT_CULL")
 
 function events.skull_render(delta, block, item, entity, mode)
     -- scans through every key and resets the position
-    for k, pianoID in pairs(pianos) do
+--[[     for k, pianoID in pairs(pianos) do
         for keyID, timecode in pairs(pianoID.playingKeys) do
-            models.Piano.SKULL.Piano.Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(0, 0, 0)
+            models.Drum.SKULL.DrumSet   .Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(0, 0, 0)
         end
-    end
+    end ]]
 
     -- sets the scale of piano items to be small, and blocks to be large
     if mode == "BLOCK" then
-        models.Piano.SKULL.Piano:setScale(1, 1, 1)
+        models.Drum.SKULL.DrumSet   :setScale(1, 1, 1)
     else
-        models.Piano.SKULL.Piano:setScale(0.3, 0.3, 0.3)
+        models.Drum.SKULL.DrumSet   :setScale(0.3, 0.3, 0.3)
         -- models:setPrimaryTexture("CUSTOM",textures['PierraNovaPiano'])
         return
     end
@@ -42,7 +42,7 @@ function events.skull_render(delta, block, item, entity, mode)
     -- checks table for checked keys, and presses the key if the key press was less than 3 ticks ago
     for keyID, keyPresstime in pairs(pianos[pianoID].playingKeys) do
         if world.getTime() < keyPresstime + 3 then
-            models.Piano.SKULL.Piano.Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(-4, 0, 0)
+            --models.Drum.SKULL.DrumSet   .Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(-4, 0, 0)
         else
             -- clears the keypress data for keys that were pressed more than 3 ticks ago
             pianos[pianoID].playingKeys[keyID] = nil
@@ -71,7 +71,7 @@ function playNote(pianoID, keyID, doesPlaySound, notePos)
     if notePos then
         sounds:playSound(keyPitches[keyID][2], notePos, 2, keyPitches[keyID][1])
     else
-        sounds:playSound(keyPitches[keyID][2], pianos[pianoID].pos, 2, keyPitches[keyID][1])
+        sounds:playSound('sounds.'..keyID, pianos[pianoID].pos, 2)
     end
 end
 
@@ -124,7 +124,7 @@ function events.world_tick()
                         if debug then
                             -- spawn box corner particles
                             for cornerID, corner in pairs(computeCorners(box)) do
-                                particles:newParticle("minecraft:dust 0 0.7 0.7 0.1",
+                                particles:newParticle("minecraft:dust 0 0.7 0.7 0.2",
                                     worldOffset + rotateAroundPivot(pianoRot, corner, vec(0, 0, 0)))
                             end
                         end
@@ -133,64 +133,16 @@ function events.world_tick()
                     ------------------------------------------- end of section -------------------------------------------------
 
                     keyID = nil
-                    if rayIntersections.blackNotes then
-                        -- converts x value from raycast to numeric intersection ID for notes from 1 to 31, and skips missing notes
-                        intersection = rayIntersections.blackNotes
-                        local noteXpos = (intersection.x + 44 / 32 - 0.0407) * 16
-                        checkForEmptyKeys(math.ceil(noteXpos))
-                        local skippedKeys = 0
-                        for k, v in ipairs(emptyKeys) do
-                            if noteXpos > v then
-                                skippedKeys = skippedKeys + 1
-                            end
-                        end
-                        local keyIntersectID = math.floor(noteXpos) - skippedKeys + 1
-
-                        -- uses intersection ID to find surrounding notes and uses box raycasting to determine what black note the player is looking at (if they're lookin at one)
-                        for k = 1, 3 do
-                            local numericID = math.clamp(keyIntersectID + (k - 2) - 1, 0, 30)
-                            local value = boxRayIntersection(blackKeyBoundingBoxes[numericID], ray)
-                            ---- debug ----
-                            if debug then
-                                for cornerID, corner in pairs(computeCorners(blackKeyBoundingBoxes[numericID])) do
-                                    particles:newParticle("minecraft:dust 0.7 0 0.7 0.1",
-                                        worldOffset + rotateAroundPivot(pianoRot, corner, vec(0, 0, 0)))
-                                end
-                            end
-                            ---------------
-                            if value ~= nil then
-                                ---- debug ----
-                                if debug then
-                                    -- spawn lookat colission particles
-                                    particles:newParticle("minecraft:dust 1 0 0 0.1",
-                                        worldOffset + rotateAroundPivot(pianoRot, value, vec(0, 0, 0)))
-                                end
-                                ---------------
-                                -- converts numeric ID to string ID
-                                keyID = numberToBlackNote[(numericID - 1) % 5 + 1] ..
-                                "#" .. math.floor((numericID - 1) / 5 + 1)
-                            end
-                        end
+                    if rayIntersections.bassDrum then
+                        keyID = 'B1'
                     end
-                    -- only executes if the ray intesected with a white note and black note intersection didn't find anything
-                    if rayIntersections.whiteNotes and keyID == nil then
-                        intersection = rayIntersections.whiteNotes
-
-                        -- converts x value from racast to numeric ID
-                        local numericID = math.clamp(math.floor((intersection.x + 44 / 32) * 16), 0,
-                            43)
-
-                        -- converts numeric ID to string ID
-                        keyID = numberToWhiteNote[(numericID - 2) % 7 + 1] ..
-                        math.floor((numericID - 2) / 7 + 1)
-                        ---- debug ----
-                        if debug then
-                            -- spawn lookat colission particles
-                            particles:newParticle("minecraft:dust 1 0 0 0.1",
-                                worldOffset + rotateAroundPivot(pianoRot, intersection, vec(0, 0, 0)))
-                        end
-                        ---------------
+                    if rayIntersections.snareCrossStick then
+                        keyID = 'C#2'
                     end
+                    if rayIntersections.snareDrum then
+                        keyID = 'D2'
+                    end
+                   
                     if keyID == nil then break end
                     playNote(pianoID, keyID, pianos[pianoID].playingKeys[keyID] == nil)
                 until true
