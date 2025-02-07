@@ -14,9 +14,9 @@ function computeCorners(box)
     for y = 0, 1 do
       for z = 0, 1 do
         -- Compute the corner position using the min or max values of the box
-        local xpos = x == 0 and box.min.x or box.max.x
-        local ypos = y == 0 and box.min.y or box.max.y
-        local zpos = z == 0 and box.min.z or box.max.z
+        local xpos = x == 0 and box[1].x or box[2].x
+        local ypos = y == 0 and box[1].y or box[2].y
+        local zpos = z == 0 and box[1].z or box[2].z
         local corner = vec(xpos, ypos, zpos)
 
         -- Add the corner to the list

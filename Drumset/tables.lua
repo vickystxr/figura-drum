@@ -2,53 +2,57 @@ boundingBoxes = {
     { -- bassDrum
         [1] = vec(-6/16,0/16,-8/16),
         [2] = vec(6/16,12/16,7/16),
-        key = function() return "B1" end
+        key = "B1"
     },
     { -- snareCrossStick
-        [1] = vec(-15/16,12/16,2/16),
-        [2] = vec(-5/16,17/16,12/16),
-        key = function() return "C#2" end
+        [1] = vec(-21/16,16/16,11/16),
+        [2] = vec(-11/16,19/16,21/16),
+        key = "C#2"
     },
     { -- snareDrum
-        [1] = vec(-15/16,17/16,2/16),
-        [2] = vec(-5/16,18/16,12/16),
-        key = function() return "D2" end
+        [1] = vec(-21/16,19/16,11/16),
+        [2] = vec(-11/16,20/16,21/16),
+        key = "D2"
     },
     { -- floorTom
-        [1] = vec(7/16,13/16,2/16),
-        [2] = vec(17/16,18/16,12/16),
-        key = function() return "F2" end
+        [1] = vec(10/16,11/16,6/16),
+        [2] = vec(20/16,16/16,16/16),
+        key = "F2"
     },
     { -- lowTom
-        [1] = vec(0/16,13/16,-7/16),
-        [2] = vec(9/16,21/16,2/16),
-        key = function() return "A2" end
+        [1] = vec(1/16,16/16,-7/16),
+        [2] = vec(12/16,23/16,2/16),
+        key = "A2"
     },
     { -- highTom
-        [1] = vec(-9/16,13/16,-7/16),
-        [2] = vec(-1/16,21/16,1/16),
-        key = function() return "B2" end
+        [1] = vec(-11/16,16/16,-6/16),
+        [2] = vec(-1/16,22/16,2/16),
+        key = "B2"
     },
     { -- rideCymbal
-        [1] = vec(9/16,22/16,-8/16),
-        [2] = vec(20/16,25/16,4/16),
-        key = function() return "D#3" end
+        [1] = vec(5/16,25/16,-15/16),
+        [2] = vec(20/16,28/16,-2/16),
+        key = "D#3"
     },
     { -- crashCymbal
         [1] = vec(-5/16,25/16,-15/16),
-        [2] = vec(-17/16,28/16,-1/16),
-        key = function() return "C#3" end
+        [2] = vec(-20/16,28/16,-1/16),
+        key = "C#3"
     },
-    { -- hiHatss
-        [1] = vec(-9/16,19/16,-5/16),
-        [2] = vec(-20/16,22/16,5/16),
-        key = function()
-                if player:isCrouching() then
-                    return "F#2"
-                else
-                    return "A#2"
-                end
-            end
+    { -- hiHatsOpen
+        [1] = vec(-13/16,20/16,-5/16),
+        [2] = vec(-22/16,22/16,5/16),
+        key = "A#2"
+    },
+    { -- hiHatsClosed
+        [1] = vec(-13/16,14/16,-5/16),
+        [2] = vec(-22/16,20/16,5/16),
+        key = "F#2"
+    },
+    { -- hiHatsPedal
+        [1] = vec(-13/16,0/16,-5/16),
+        [2] = vec(-22/16,14/16,5/16),
+        key = "G#2"
     },
     
 }

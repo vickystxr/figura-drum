@@ -113,7 +113,7 @@ function events.world_tick()
                     local keyID
                     local raycast = raycast:aabb(eyePos,endPos,boundingBoxes)
                     if raycast and raycast.key then
-                        keyID = raycast.key()
+                        keyID = raycast.key
                     end
                     
 
