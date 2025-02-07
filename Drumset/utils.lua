@@ -5,34 +5,7 @@ function rotateAroundPivot(rot,pos,pivot)
   return (rotationMatrix*pivot:augmented()).xyz
 end
 
-
--- function to check if a ray intersects with a box
-function boxRayIntersection(box, ray) -- written by Wolfy
-  -- calculate the intersection times for each axis of the box
-  ray.dir_inv = vec( 1/ray.dir.x, 1/ray.dir.y, 1/ray.dir.z)
-  local t1x = (box.min.x - ray.origin.x) * ray.dir_inv.x
-  local t2x = (box.max.x - ray.origin.x) * ray.dir_inv.x
-  local t1y = (box.min.y - ray.origin.y) * ray.dir_inv.y
-  local t2y = (box.max.y - ray.origin.y) * ray.dir_inv.y
-  local t1z = (box.min.z - ray.origin.z) * ray.dir_inv.z
-  local t2z = (box.max.z - ray.origin.z) * ray.dir_inv.z
-
-  -- find the minimum and maximum intersection times across all axes
-  local tmin = math.max(math.min(t1x, t2x), math.min(t1y, t2y), math.min(t1z, t2z))
-  local tmax = math.min(math.max(t1x, t2x), math.max(t1y, t2y), math.max(t1z, t2z))
-
-  -- check if the intersection times are valid
-  if tmax > math.max(tmin, 0) then
-    -- return the intersection point and the intersection time
-    local intersection_point = ray.origin + tmin * ray.dir
-    return intersection_point, tmin
-  end
-
-  -- return nil if the ray does not intersect with the box
-  return nil
-end
-
-function computeCorners(box) -- written by AI. Not me!
+function computeCorners(box)
   -- Initialize the list of corners
   local corners = {}
 

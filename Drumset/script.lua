@@ -51,21 +51,29 @@ function events.skull_render(delta, block, item, entity, mode)
 end
 
 -- plays note ^^
-function playNote(pianoID, keyID, doesPlaySound, notePos)
+function playNote(pianoID, keyID, doesPlaySound, notePos, noteVolume)
     if drums[pianoID].playingKeys[keyID] == nil then
         drums[pianoID].playingKeys[keyID] = {}
+    end
+    if not noteVolume then
+        noteVolume = 2
     end
     drums[pianoID].playingKeys[keyID] = world.getTime()
     if not doesPlaySound then return end
     if notePos then
-        sounds:playSound(keyPitches[keyID][2], notePos, 2, keyPitches[keyID][1])
+        sounds:playSound('sounds.'..keyID, notePos, noteVolume)
     else
-        sounds:playSound('sounds.'..keyID, drums[pianoID].pos, 2)
+        sounds:playSound('sounds.'..keyID, drums[pianoID].pos, noteVolume)
     end
 end
 
+function playSound(keyID,notePos,noteVolume)
+    sounds:playSound('sounds.'..keyID,notePos,noteVolume)
+  end
+
 -- stores important functions so that other avatars can access them through avatarVars() in the world API
 avatar:store("playNote", playNote)
+avatar:store("playSound",playSound)
 avatar:store("validPos", function(pianoID) return drums[pianoID] ~= nil end)
 avatar:store("getPlayingKeys",
     function(drumID) return drums[drumID] ~= nil and drums[drumID].playingKeys or nil end)
@@ -100,59 +108,23 @@ function events.world_tick()
 
                     local eyePos = rotateAroundPivot(-drumRot,
                         vec(pos.x, pos.y + player:getEyeHeight(), pos.z) - worldOffset, vec(0, 0, 0))
-                    local lookDir = rotateAroundPivot(-drumRot, player:getLookDir(), vec(0, 0, 0))
+                    local endPos = rotateAroundPivot(-drumRot, player:getLookDir(), vec(0, 0, 0)) * 10 + eyePos
 
-                    local ray = { origin = eyePos, dir = lookDir }
-                    rayIntersections = {}
+                    local keyID
+                    local raycast = raycast:aabb(eyePos,endPos,boundingBoxes)
+                    if raycast and raycast.key then
+                        keyID = raycast.key()
+                    end
+                    
 
-                    for boxID, bounding in pairs(boundingBoxes) do
-                        local box = bounding
-                        local intersection = boxRayIntersection(box, ray)
-                        rayIntersections[boxID] = intersection
-                        ---- debug ----
-                        if debug then
-                            -- spawn box corner particles
-                            for cornerID, corner in pairs(computeCorners(box)) do
-                                particles:newParticle("minecraft:dust 0 0.7 0.7 0.2",
-                                    worldOffset + rotateAroundPivot(drumRot, corner, vec(0, 0, 0)))
-                            end
+                    if debug then
+                        for boxID, box in pairs(boundingBoxes) do
+                                -- spawn box corner particles
+                                for cornerID, corner in pairs(computeCorners(box)) do
+                                    particles:newParticle("minecraft:dust 0 0.7 0.7 0.2",
+                                        worldOffset + rotateAroundPivot(drumRot, corner, vec(0, 0, 0)))
+                                end
                         end
-                        ---------------
-                    end
-                    ------------------------------------------- end of section -------------------------------------------------
-
-                    keyID = nil
-                    if rayIntersections.bassDrum then
-                        keyID = 'B1'
-                    end
-                    if rayIntersections.snareCrossStick then
-                        keyID = 'C#2'
-                    end
-                    if rayIntersections.snareDrum then
-                        keyID = 'D2'
-                    end
-                    if rayIntersections.floorTom then
-                        keyID = 'F2'
-                    end
-                    if rayIntersections.lowTom then
-                        keyID = 'A2'
-                    end
-                    if rayIntersections.highTom then
-                        keyID = 'B2'
-                    end
-                    if rayIntersections.rideCymbal then
-                        keyID = 'D#3'
-                    end
-                    if rayIntersections.crashCymbal then
-                        keyID = 'C#3'
-                    end
-                    if rayIntersections.hiHats then
-                        if player:isCrouching() then
-                            keyID = 'F#2'
-                        else
-                            keyID = 'A#2'
-                        end
-                        
                     end
                    
                     if keyID == nil then break end
@@ -163,7 +135,7 @@ function events.world_tick()
     end
 
     -- clears any piano table elements if there's not a head there anymore
-    for k, v in pairs(drums) do
+    for k, v in pairs(drums) do 
         if world.getBlockState(v.pos).id ~= "minecraft:player_head" then
             drums[k] = nil
         end
