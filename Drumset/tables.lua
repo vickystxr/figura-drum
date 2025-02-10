@@ -1,4 +1,4 @@
-boundingBoxes = {
+local boundingBoxes = {
     { -- bassDrum
         [1] = vec(-6/16,0/16,-8/16),
         [2] = vec(6/16,12/16,7/16),
@@ -56,3 +56,5 @@ boundingBoxes = {
     },
     
 }
+
+return boundingBoxes

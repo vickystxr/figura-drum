@@ -1,25 +1,161 @@
-require("utils")
-require("tables")
+local utils = require("utils")
+local boundingBoxes = require("tables")
 local drums = {}
 local debug = false
+local clock = 0
 local playerRaycastRange = 3
+local DrumSet = models.Drum.SKULL.DrumSet
 
-models.Drum.SKULL.DrumSet:setPrimaryRenderType("TRANSLUCENT_CULL")
+local anims = {
+    B1 = function(animFrame,drumID)
+        if animFrame < 4 then
+            DrumSet.BassDrum.KickPedal.Pedal:setRot(0)
+            DrumSet.BassDrum.KickPedal.Beater:setRot(utils.getSin(animFrame,-45,0,4,0))
+            DrumSet.BassDrum.BDrum:setScale(utils.getSin(animFrame,1,1.03,4,0))
+        else
+            drums[drumID].playingKeys.B1 = nil
+        end
+    end,
+    ["C#2"] = function(animFrame,drumID)
+        if animFrame < 3 then
+            local rot = utils.getSin(animFrame,-0.5,0,1.5,0)
+            DrumSet.Snare:setRot(0,0,rot)
+        else
+            drums[drumID].playingKeys["C#2"] = nil
+        end
+    end,
+    D2 = function(animFrame,drumID)
+        if animFrame < 4 then
+            DrumSet.Snare.SDrum:setScale(utils.getSin(animFrame,1,1.03,4,0))
+        else
+            drums[drumID].playingKeys["D2"] = nil
+        end
+    end,
+    F2 = function(animFrame,drumID)
+        if animFrame < 4 then
+            DrumSet.FloorTom.FTDrum:setScale(utils.getSin(animFrame,1,1.03,4,0))
+        else
+            drums[drumID].playingKeys["F2"] = nil
+        end
+    end,
+    A2 = function(animFrame,drumID)
+        if animFrame < 4 then
+            DrumSet.MediumTom.MDrum:setScale(utils.getSin(animFrame,1,1.03,4,0))
+        else
+            drums[drumID].playingKeys["A2"] = nil
+        end
+    end,
+    B2 = function(animFrame,drumID)
+        if animFrame < 4 then
+            DrumSet.HiTom.HDrum:setScale(utils.getSin(animFrame,1,1.03,4,0))
+        else
+            drums[drumID].playingKeys["B2"] = nil
+        end
+    end,
+    ["D#3"] = function(animFrame,drumID)
+        if animFrame < 40 then
+            local mod = 1 - animFrame/40
+            local rot = utils.getSin(animFrame,-5,5,20,10)*mod
+            DrumSet.RideCymbal.RCStand.RCDrum:setRot(rot-35,0,rot/3)
+        else
+            drums[drumID].playingKeys["D#3"] = nil
+        end
+    end,
+    ["C#3"] = function(animFrame,drumID)
+        if animFrame < 80 then
+            local mod = 1 - animFrame/80
+            local rot = utils.getSin(animFrame,-10,10,20,10)*mod
+            DrumSet.CrashCymbal.CCStand.CCCymbal:setRot(rot-35,0,-rot/3)
+        else
+            drums[drumID].playingKeys["C#3"] = nil
+        end
+    end,
+    ["A#2"] = function(animFrame,drumID)
+        if animFrame < 20 then
+            local mod = 1 - animFrame/20
+            local rot = utils.getSin(animFrame,-2,2,10,5)*mod
+            DrumSet.HiHats.HHCymbal:setRot(rot,-45,-rot)
+        else
+            drums[drumID].playingKeys["A#2"] = nil
+        end
+    end,
+    ["F#2"] = function(animFrame,drumID)
+        if animFrame < 15 then
+            local mod = 1 - animFrame/15
+            local rot = utils.getSin(animFrame,-2,2,10,5)*mod
+            DrumSet.HiHats.HHCymbal:setRot(rot,-45,-rot)
+            DrumSet.HiHats.HHCymbal:setScale(1,0.5,1)
+            DrumSet.HiHats.Pedal:setRot(0,45,0)
+        else
+            drums[drumID].playingKeys["F#2"] = nil
+        end
+    end,
+    ["G#2"] = function(animFrame,drumID)
+        if animFrame < 4 then
+            DrumSet.HiHats.HHCymbal:setScale(1,0.5,1)
+            DrumSet.HiHats.Pedal:setRot(0,45,0)
+        else
+            drums[drumID].playingKeys["G#2"] = nil
+        end
+    end
+}
+
+local resetVals = {
+    B1 = function()
+        DrumSet.BassDrum.KickPedal.Pedal:setRot(-15)
+        DrumSet.BassDrum.KickPedal.Beater:setRot(-45)
+        DrumSet.BassDrum.BDrum:setScale(1)
+    end,
+    ["C#2"] = function()
+        DrumSet.Snare:setRot(0,0,0)
+    end,
+    D2 = function()
+        DrumSet.Snare.SDrum:setScale(1)
+    end,
+    F2 = function()
+        DrumSet.FloorTom.FTDrum:setScale(1)
+    end,
+    A2 = function()
+        DrumSet.MediumTom.MDrum:setScale(1)
+    end,
+    B2 = function()
+        DrumSet.HiTom.HDrum:setScale(1)
+    end,
+    ['D#3'] = function()
+        DrumSet.RideCymbal.RCStand.RCDrum:setRot(-35,0,0)
+    end,
+    ['C#3'] = function()
+        DrumSet.CrashCymbal.CCStand.CCCymbal:setRot(-35,0,0)
+    end,
+    ['A#2'] = function()
+        DrumSet.HiHats.HHCymbal:setRot(0,-45,0)
+    end,
+    ['F#2'] = function()
+        DrumSet.HiHats.HHCymbal:setRot(0,-45,0)
+        DrumSet.HiHats.HHCymbal:setScale(1,1,1)
+            DrumSet.HiHats.Pedal:setRot(-15,45,0)
+    end,
+    ['G#2'] = function()
+        DrumSet.HiHats.HHCymbal:setScale(1,1,1)
+        DrumSet.HiHats.Pedal:setRot(-15,45,0)
+    end
+}
 
 function events.skull_render(delta, block, item, entity, mode)
     -- scans through every key and resets the position
---[[     for k, pianoID in pairs(pianos) do
-        for keyID, timecode in pairs(pianoID.playingKeys) do
-            models.Drum.SKULL.DrumSet   .Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(0, 0, 0)
+    for k, drumID in pairs(drums) do
+        for keyID, timecode in pairs(drumID.playingKeys) do
+            if resetVals[keyID] then
+                resetVals[keyID]()
+            end
         end
-    end ]]
+    end
 
     -- sets the scale of piano items to be small, and blocks to be large
     if mode == "BLOCK" then
-        models.Drum.SKULL.DrumSet   :setScale(1, 1, 1)
+        models.Drum.SKULL.DrumSet:setScale(1, 1, 1)
     else
-        models.Drum.SKULL.DrumSet   :setScale(0.3, 0.3, 0.3)
-        -- models:setPrimaryTexture("CUSTOM",textures['PierraNovaPiano'])
+        models.Drum.SKULL.DrumSet:setScale(0.3, 0.3, 0.3)
         return
     end
 
@@ -27,43 +163,40 @@ function events.skull_render(delta, block, item, entity, mode)
     local pos = block:getPos()
     local drumID = tostring(pos)
 
-    -- changes the piano texture if there's a gold 2 blocks under the player head
-    if world.getBlockState(pos.x, pos.y - 2, pos.z):getID() == "minecraft:gold_block" then
-        -- models:setPrimaryTexture("CUSTOM",textures['ToastPiano'])
-    else
-        -- models:setPrimaryTexture("CUSTOM",textures['PierraNovaPiano'])
-    end
-
     -- creats new piano entry if head was just placed
     if drums[drumID] == nil then
         drums[drumID] = { pos = pos, playingKeys = {} }
     end
 
     -- checks table for checked keys, and presses the key if the key press was less than 3 ticks ago
+    --logTable(drums[drumID].playingKeys)
     for keyID, keyPresstime in pairs(drums[drumID].playingKeys) do
-        if world.getTime() < keyPresstime + 3 then
+        local animFrame = clock - keyPresstime + delta
+        --log('a')
+        anims[keyID](animFrame,drumID)
+--[[         if world.getTime() < keyPresstime + 3 then
             --models.Drum.SKULL.DrumSet   .Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(-4, 0, 0)
         else
             -- clears the keypress data for keys that were pressed more than 3 ticks ago
             drums[drumID].playingKeys[keyID] = nil
-        end
+        end ]]
     end
 end
 
 -- plays note ^^
-function playNote(pianoID, keyID, doesPlaySound, notePos, noteVolume)
-    if drums[pianoID].playingKeys[keyID] == nil then
-        drums[pianoID].playingKeys[keyID] = {}
+function playNote(drumID, keyID, doesPlaySound, notePos, noteVolume)
+    if drums[drumID].playingKeys[keyID] == nil then
+        drums[drumID].playingKeys[keyID] = {}
     end
     if not noteVolume then
         noteVolume = 2
     end
-    drums[pianoID].playingKeys[keyID] = world.getTime()
+    drums[drumID].playingKeys[keyID] = clock
     if not doesPlaySound then return end
     if notePos then
         sounds:playSound('sounds.'..keyID, notePos, noteVolume)
     else
-        sounds:playSound('sounds.'..keyID, drums[pianoID].pos, noteVolume)
+        sounds:playSound('sounds.'..keyID, drums[drumID].pos, noteVolume)
     end
 end
 
@@ -80,18 +213,18 @@ avatar:store("getPlayingKeys",
 
 -- the tick function >~>
 function events.world_tick()
-    for i, v in pairs(drums) do
-        if world.getBlockState(v.pos).id ~= "minecraft:player_head" then
-            drums[i] = nil
-        end
-    end
-
+    clock = clock + 1
     -- runs this code for every player
     for k, player in pairs(world.getPlayers()) do
         repeat
             if not (player:isUsingItem() or player:getSwingTime() == 1 or debug) then break end
             local pos = player:getPos()
-
+            local avatarVars = world:avatarVars()[player:getUUID()]
+            local eyeOffset
+            if avatarVars then 
+                eyeOffset = avatarVars.eyePos
+            end
+            if not eyeOffset then eyeOffset = 0 end
             -- run this code for every piano
             for drumID, drumData in pairs(drums) do
                 repeat
@@ -106,9 +239,9 @@ function events.world_tick()
                     local pivot = vec(0.5, 0, 0.5)
                     local worldOffset = pianoPos + pivot
 
-                    local eyePos = rotateAroundPivot(-drumRot,
-                        vec(pos.x, pos.y + player:getEyeHeight(), pos.z) - worldOffset, vec(0, 0, 0))
-                    local endPos = rotateAroundPivot(-drumRot, player:getLookDir(), vec(0, 0, 0)) * 10 + eyePos
+                    local eyePos = utils.rotateAroundPivot(-drumRot,
+                        vec(pos.x, pos.y + player:getEyeHeight(), pos.z) - worldOffset + eyeOffset, vec(0, 0, 0))
+                    local endPos = utils.rotateAroundPivot(-drumRot, player:getLookDir(), vec(0, 0, 0)) * 10 + eyePos
 
                     local keyID
                     local raycast = raycast:aabb(eyePos,endPos,boundingBoxes)
@@ -120,15 +253,15 @@ function events.world_tick()
                     if debug then
                         for boxID, box in pairs(boundingBoxes) do
                                 -- spawn box corner particles
-                                for cornerID, corner in pairs(computeCorners(box)) do
+                                for cornerID, corner in pairs(utils.computeCorners(box)) do
                                     particles:newParticle("minecraft:dust 0 0.7 0.7 0.2",
-                                        worldOffset + rotateAroundPivot(drumRot, corner, vec(0, 0, 0)))
+                                        worldOffset + utils.rotateAroundPivot(drumRot, corner, vec(0, 0, 0)))
                                 end
                         end
                     end
                    
                     if keyID == nil then break end
-                    playNote(drumID, keyID, drums[drumID].playingKeys[keyID] == nil)
+                    playNote(drumID, keyID,true)
                 until true
             end
         until true

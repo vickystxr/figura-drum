@@ -1,11 +1,12 @@
-function rotateAroundPivot(rot,pos,pivot) 
+local utils = {}
+function utils.rotateAroundPivot(rot,pos,pivot) 
   local rotationMatrix = matrices.mat4()
   rotationMatrix:translate(pos) --pos
   rotationMatrix:rotate(rot) --rot
   return (rotationMatrix*pivot:augmented()).xyz
 end
 
-function computeCorners(box)
+function utils.computeCorners(box)
   -- Initialize the list of corners
   local corners = {}
 
@@ -28,3 +29,9 @@ function computeCorners(box)
   -- Return the list of corners
   return corners
 end
+
+function utils.getSin(delta, min,max,period,phaseShift)
+  return math.abs((min-max)/2) * math.sin((2*math.pi*(delta+phaseShift))/(period+(math.pi/2))) + ((min+max)/2)
+end
+
+return utils
