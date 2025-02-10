@@ -209,6 +209,12 @@ avatar:store("getPlayingKeys",
 -- the tick function >~>
 function events.world_tick()
     clock = clock + 1
+    -- clears any piano table elements if there's not a head there anymore
+    for k, v in pairs(drums) do 
+        if world.getBlockState(v.pos).id ~= "minecraft:player_head" then
+            drums[k] = nil
+        end
+    end
     -- runs this code for every player
     for k, player in pairs(world.getPlayers()) do
         repeat
@@ -260,12 +266,5 @@ function events.world_tick()
                 until true
             end
         until true
-    end
-
-    -- clears any piano table elements if there's not a head there anymore
-    for k, v in pairs(drums) do 
-        if world.getBlockState(v.pos).id ~= "minecraft:player_head" then
-            drums[k] = nil
-        end
     end
 end
