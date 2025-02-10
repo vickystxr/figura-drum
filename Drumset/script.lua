@@ -169,17 +169,12 @@ function events.skull_render(delta, block, item, entity, mode)
     end
 
     -- checks table for checked keys, and presses the key if the key press was less than 3 ticks ago
-    --logTable(drums[drumID].playingKeys)
+
     for keyID, keyPresstime in pairs(drums[drumID].playingKeys) do
         local animFrame = clock - keyPresstime + delta
-        --log('a')
-        anims[keyID](animFrame,drumID)
---[[         if world.getTime() < keyPresstime + 3 then
-            --models.Drum.SKULL.DrumSet   .Keys["C" .. string.sub(keyID, -1, -1)][keyID]:setRot(-4, 0, 0)
-        else
-            -- clears the keypress data for keys that were pressed more than 3 ticks ago
-            drums[drumID].playingKeys[keyID] = nil
-        end ]]
+        if anims[keyID] then
+            anims[keyID](animFrame,drumID)
+        end
     end
 end
 
